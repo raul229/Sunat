@@ -1,4 +1,4 @@
-from playwright.sync_api import sync_playwright
+from utils.Utilidades import pagina_login_powerapps
 from dotenv import load_dotenv
 import os
 import json
@@ -8,7 +8,6 @@ import time
 
 load_dotenv()
 
-PERFIL_PLAYWRIGHT = os.path.join(os.path.expanduser('~'), '.playwright-powerapps-profile')
 TOKENS_FILE = os.getenv('TOKENS_FILE')
 
 # Datos de la consulta de prueba
@@ -41,28 +40,6 @@ FIXED_HEADERS = {
     "x-ms-request-url": "/apim/logicflows/02f67736a11148cdb8abe97f15523df0/triggers/manual/run?api-version=2015-02-01-preview",
     "x-ms-user-agent": "PowerApps/3.26021.10 (Web Player; AppName=ecd6b1e1-f30e-49ed-b688-ae719ade20ee)"
 }
-
-def extraer_tokens_del_almacenamiento(pagina):
-    """Busca JWT en localStorage, sessionStorage y cookies."""
-    jwt_candidates = []
-    # localStorage
-    ls = pagina.evaluate("() => window.localStorage")
-    if ls:
-        for key, value in ls.items():
-            if isinstance(value, str) and value.startswith("eyJ"):
-                jwt_candidates.append(value)
-    # sessionStorage
-    ss = pagina.evaluate("() => window.sessionStorage")
-    if ss:
-        for key, value in ss.items():
-            if isinstance(value, str) and value.startswith("eyJ"):
-                jwt_candidates.append(value)
-    # cookies
-    cookies = pagina.context.cookies()
-    for cookie in cookies:
-        if cookie['value'].startswith("eyJ"):
-            jwt_candidates.append(cookie['value'])
-    return jwt_candidates
 
 def interceptar_token(pagina, timeout=120):
     """Espera a que se realice una petición a la API y captura el token."""
@@ -118,6 +95,10 @@ def consultar_con_requests(jwt_token, ruc):
     payload = {"text": ruc}
     print(f"🔍 Consultando RUC {ruc}...")
     response = requests.post(API_URL, headers=headers, json=payload)
+    
+    if response.status_code == 400:
+        pass
+    
     print(f"Status: {response.status_code}")
     try:
         print("Respuesta:", response.json())
@@ -125,7 +106,7 @@ def consultar_con_requests(jwt_token, ruc):
         print("Respuesta (texto):", response.text)
     return response
 
-def iniciar_sesion_manual(pagina):
+def iniciar_sesion_manual():
     print("🔐 Por favor, inicia sesión manualmente en el navegador.")
     print("Una vez que hayas ingresado y estés en la página de consultas, presiona Enter aquí.")
     input("⏎ Presiona Enter cuando estés listo...")
@@ -142,32 +123,12 @@ def main():
         return
 
     # No hay token, abrir navegador
-    with sync_playwright() as p:
-        contexto = p.chromium.launch_persistent_context(
-            user_data_dir=PERFIL_PLAYWRIGHT,
-            headless=False,
-            channel='chromium',
-        )
-        pagina = contexto.pages[0] if contexto.pages else contexto.new_page()
-
-        # Ir a la app
-        link = os.getenv('LINK_POWERAPPS')
-        if not link:
-            print("⚠️ Variable LINK_POWERAPPS no definida en .env")
-            link = input("Introduce la URL de la app: ")
-        pagina.goto(link)
+    p, contexto, pagina = pagina_login_powerapps()
+    if pagina:
 
         # Esperar login manual
-        iniciar_sesion_manual(pagina)
-
-        # 1. Intentar obtener token del almacenamiento
-        jwts = extraer_tokens_del_almacenamiento(pagina)
-        if jwts:
-            token = jwts[0]
-            print("✅ Token encontrado en almacenamiento.")
-        else:
-            print("⚠️ No se encontró token en almacenamiento. Activando interceptación de red...")
-            token = interceptar_token(pagina, timeout=60)
+        iniciar_sesion_manual()
+        token = interceptar_token(pagina, timeout=60)
 
         if token:
             guardar_token(token)
@@ -178,11 +139,14 @@ def main():
                 if not ruc:
                     ruc = RUC_PRUEBA
                 consultar_con_requests(token, ruc)
+
+
         else:
             print("❌ No se pudo obtener el token. Intenta de nuevo.")
 
         input("Presiona Enter para cerrar el navegador...")
         contexto.close()
+        p.stop()
 
 if __name__ == '__main__':
     main()
