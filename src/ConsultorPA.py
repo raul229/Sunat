@@ -1,12 +1,12 @@
 import os, json
 import requests
-from config import API_URL, FIXED_HEADERS, RUC_PRUEBA, TOKENS_FILE
+from config import API_URL_POWERAPPS, FIXED_HEADERS_POWERAPPS, RUC_PRUEBA, TOKENS_FILE
 
 class ConsultorPA:
     
     def __init__(self):
         self._token = None
-        self.FIXED_HEADERS = FIXED_HEADERS
+        self.FIXED_HEADERS = FIXED_HEADERS_POWERAPPS
         self.RUC_PRUEBA=RUC_PRUEBA
         self.sesion = None
         self.cargar_token()
@@ -36,5 +36,5 @@ class ConsultorPA:
     
     def consultar(self, ruc):
         payload = {"text": ruc}
-        response =  self.sesion.post(API_URL, json=payload)
+        response =  self.sesion.post(API_URL_POWERAPPS, json=payload)
         return response

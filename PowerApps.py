@@ -1,4 +1,4 @@
-from utils.Utilidades import obtener_token_powerapps
+from auth.AuthPowerApps import obtener_token_powerapps
 from src.ConsultorPA import ConsultorPA
 from config import RUC_PRUEBA
 
