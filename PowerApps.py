@@ -1,10 +1,9 @@
-from utils.Utilidades import pagina_login_powerapps
+from utils.Utilidades import pagina_login_powerapps, interceptar_token
 from dotenv import load_dotenv
 import os
 import json
 import requests
 import base64
-import time
 
 load_dotenv()
 
@@ -40,26 +39,6 @@ FIXED_HEADERS = {
     "x-ms-request-url": "/apim/logicflows/02f67736a11148cdb8abe97f15523df0/triggers/manual/run?api-version=2015-02-01-preview",
     "x-ms-user-agent": "PowerApps/3.26021.10 (Web Player; AppName=ecd6b1e1-f30e-49ed-b688-ae719ade20ee)"
 }
-
-def interceptar_token(pagina, timeout=120):
-    """Espera a que se realice una petición a la API y captura el token."""
-    token = None
-    def handle_request(request):
-        nonlocal token
-        if request.url.startswith(API_URL):
-            auth_header = request.headers.get('authorization')
-            if auth_header and auth_header.startswith('Bearer '):
-                token = auth_header[7:]
-                print("✅ Token capturado desde la petición.")
-    pagina.on('request', handle_request)
-    print("🌐 Esperando a que realices una consulta en el navegador...")
-    print("Por favor, haz clic en 'Buscar' o realiza la consulta manualmente.")
-    start = time.time()
-    while token is None and time.time() - start < timeout:
-        pagina.wait_for_timeout(1000)
-    if token is None:
-        print("❌ No se capturó ningún token en el tiempo esperado.")
-    return token
 
 def guardar_token(token):
     with open(TOKENS_FILE, 'w') as f:
