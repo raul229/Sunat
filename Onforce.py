@@ -1,11 +1,11 @@
-from auth.AuthOnForce import optener
-from src.ConsultorPA import ConsultorPA
+from auth.AuthOnForce import obtener_token_onforce
+from src.ConsultorOF import ConsultorOF
 from config import RUC_PRUEBA
 
 
 def main():
     # Intentar cargar token guardado
-    consultor = ConsultorPA()
+    consultor = ConsultorOF()
 
     if consultor.verificar_token():
         print("✅ Token valido")
@@ -18,7 +18,7 @@ def main():
         return
     else:
         print("🔐 Por favor, inicia sesión manualmente en el navegador.")
-        token = obtener_token_powerapps()
+        token = obtener_token_onforce()
         if token:
             # Preguntar si quiere hacer consulta ahora
             usar_ahora = input("¿Quieres hacer una consulta ahora? (s/n): ").lower()

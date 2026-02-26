@@ -1,29 +1,21 @@
 from playwright.sync_api import sync_playwright
-import json
 import time
-from config import PERFIL_PLAYWRIGHT, API_URL_ONFORCE, TOKENS_FILE, LINK_ONFORCE
-from utils.Utilidades import _asegurar_archivo_token
+from config import PERFIL_PLAYWRIGHT, LINK_ONFORCE
+from utils.Utilidades import _asegurar_archivo_token, _guardar_en_tokenfile
 
-def _interceptar_token(pagina, timeout=120):
-    """Espera una petición a la API y captura el token"""
-    token = None
-    def handle_request(request):
-        nonlocal token
-        if request.url.startswith(API_URL_ONFORCE):
-            auth_header = request.headers.get("authorization")
-            if auth_header and auth_header.startswith("Bearer "):
-                token = auth_header[7:]
-                print("Token capturado correctamente.")
-
-    pagina.on("request", handle_request)
-
+def _interceptar_cookies(pagina, timeout=120)->dict:
+    """Espera hacer login y captura las cookies"""
+    
+    cookies = {c['name']: c['value'] for c in pagina.context.cookies() }    
+    # Filtrar solo las que necesitamos
+    cookies_filtradas = {k: v for k, v in cookies.items() if k in ['cookiesession1', 'PHPSESSID']}
+   
     start = time.time()
-    while token is None and time.time() - start < timeout:
+    while cookies_filtradas is None and time.time() - start < timeout:
         pagina.wait_for_timeout(1000)
+    return cookies_filtradas
 
-    return token
-
-def obtener_token_onforce():
+def obtener_token_onforce()->dict:
 
     _asegurar_archivo_token()
 
@@ -31,29 +23,30 @@ def obtener_token_onforce():
     if not link:
         raise ValueError("LINK_ONFORCE no está definido en el .env")
 
+   
     with sync_playwright() as p:
         contexto = p.chromium.launch_persistent_context(
             user_data_dir=PERFIL_PLAYWRIGHT,
             headless=False,
             channel="chromium",
+            args=[ "--disable-blink-features=AutomationControlled"]
         )
 
         pagina = contexto.pages[0] if contexto.pages else contexto.new_page()
 
         pagina.goto(link)
 
-        print("Inicia sesión manualmente si es necesario...")
+        print("Inicia sesión manualmente es OBLIGATORIO")
+        input("Presiona Enter cuando hayas iniciado sesión...")
 
-        token = _interceptar_token(pagina)
+        cookies = _interceptar_cookies(pagina)
 
-        if not token:
-            raise RuntimeError("No se pudo capturar el token.")
+        if not cookies:
+            raise RuntimeError("No se pudo capturar el cookies.")
 
-        with open(TOKENS_FILE, "w") as f:
-            json.dump({"jwt": token}, f)
 
-        print(f"Token guardado en {TOKENS_FILE}")
+        _guardar_en_tokenfile(cookies, "cookies")
 
         contexto.close()
 
-        return token
+        return cookies
