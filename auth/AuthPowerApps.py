@@ -1,8 +1,7 @@
 from playwright.sync_api import sync_playwright
-import json
 import time
-from config import PERFIL_PLAYWRIGHT, API_URL_POWERAPPS, TOKENS_FILE, LINK_POWERAPPS
-from utils.Utilidades import _asegurar_archivo_token
+from config import PERFIL_PLAYWRIGHT, API_URL_POWERAPPS, LINK_POWERAPPS
+from utils.Utilidades import _asegurar_archivo_token, _guardar_en_tokenfile
 
 
 def _interceptar_token(pagina, timeout=120):
@@ -43,17 +42,14 @@ def obtener_token_powerapps():
 
         pagina.goto(link)
 
-        print("Inicia sesión manualmente si es necesario...")
+        print("Inicia sesión manualmente es necesario...")
 
         token = _interceptar_token(pagina)
 
         if not token:
             raise RuntimeError("No se pudo capturar el token.")
 
-        with open(TOKENS_FILE, "w") as f:
-            json.dump({"jwt": token}, f)
-
-        print(f"Token guardado en {TOKENS_FILE}")
+        _guardar_en_tokenfile(token, "jwt")
 
         contexto.close()
 
