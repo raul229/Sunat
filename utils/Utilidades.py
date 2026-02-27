@@ -24,3 +24,16 @@ def _guardar_en_tokenfile(valor, nombre_atributo):
     with open(TOKENS_FILE, "w") as f:
         json.dump(data, f)
     print(f"Token guardado en {TOKENS_FILE}")
+
+def json_o_html(response):
+    if response.headers['Content-Type'] == 'application/json':
+        return response.json()
+    else:
+        return response.text
+
+def cargar_json(clave):
+    if os.path.exists(TOKENS_FILE):
+        with open(TOKENS_FILE, 'r') as f:
+            data = json.load(f)
+            return data.get(clave)
+    return None 

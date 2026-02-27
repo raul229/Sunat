@@ -1,6 +1,6 @@
-import os, json
 import requests
-from config import API_URL_POWERAPPS, FIXED_HEADERS_POWERAPPS, RUC_PRUEBA, TOKENS_FILE
+from utils.Utilidades import cargar_json
+from config import API_URL_POWERAPPS, FIXED_HEADERS_POWERAPPS, RUC_PRUEBA
 
 class ConsultorPA:
     
@@ -24,14 +24,13 @@ class ConsultorPA:
         return True
 
     def cargar_token(self):
-        archivo_tokens= TOKENS_FILE
-        if os.path.exists(archivo_tokens):
-            with open(archivo_tokens, 'r') as f:
-                data = json.load(f)
-                self._token = data.get('jwt')
-                print('Token cargado!')
+        token = cargar_json('jwt')
+        if token is not None:
+            self._token = token
             self.sesion=self._crear_sesion()
-        return None
+            print('Token cargado!')
+        else:
+            print('Token no encontrado')
     
     def consultar(self, ruc):
         payload = {"text": ruc}
