@@ -32,6 +32,22 @@ class ConsultorOF:
             print('Token cargado!')
         else:
             print('Token no encontrado')
+
+    def validar_ruc_bloqueado(self, ruc):
+        payload = {
+            "accion": "validar_ruc_bloqueado",
+            "data[ruc]": ruc,
+        }
+        response = self.consultar(payload)
+        body = response.json()
+        print(body)
+        data={}
+        if body.get('response') != "success":
+            data['comentario']=body.get('comment')
+            data['motivo']=body.get('data')[0]['MOTIVO']
+            return data
+        
+        return body.get('data')
     
     
     def consultar(self, payload):
@@ -49,8 +65,8 @@ class ConsultorOF:
         response = self.consultar(payload)
         body = response.json()
 
-        if body.get("response") != "success":
-            print('Error al consultar el score crediticio')
+        if body.get('response') != 'success':
+            print(body.get('comment'))
             return None
 
         data_raw = body.get("data")
@@ -64,14 +80,25 @@ class ConsultorOF:
         data_dict = data_raw
 
         try:
-            score = (
-                data_dict["soapBody"]
-                ["ns3GetReporteOnlineResponse"]
-                ["ns2ReporteCrediticio"]
-                ["Modulos"]["Modulo"][1]
-                ["Data"]["ns3ResumenScore"]["Puntaje"]
-            )
-            return score
+            reporte = data_dict["soapBody"]["ns3GetReporteOnlineResponse"]["ns2ReporteCrediticio"]
+
+            # 2️⃣ Razon social
+            razon_social = reporte["DatosPrincipales"]["Nombre"]
+
+            # 3️⃣ Buscar SCORE (modulo codigo 644)
+            score = None
+            for modulo in reporte["Modulos"]["Modulo"]:
+                if modulo.get("Codigo") == "644":
+                    score = modulo["Data"]["ns3ResumenScore"]["Puntaje"]
+                    break
+
+            # 4️⃣ Buscar rubro (Directorio SUNAT - codigo 878)
+            rubro = None
+            for modulo in reporte["Modulos"]["Modulo"]:
+                if modulo.get("Codigo") == "878":
+                    rubro = modulo["Data"]["ns3DirectorioSUNAT"]["Directorio"]["DescripcionCIIU"]
+                    break
+            return {"razon_social": razon_social, "score": score, "rubro": rubro}
 
         except (KeyError, IndexError, TypeError):
             return None

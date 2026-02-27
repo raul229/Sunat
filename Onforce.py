@@ -12,7 +12,7 @@ def main():
         ruc = input(f"Ingresa RUC (Enter para {RUC_PRUEBA}): ").strip()
         if not ruc:
             ruc = RUC_PRUEBA
-        print(consultor.score_crediticio(ruc))
+        print(consultor.validar_ruc_bloqueado(ruc))
         return
     else:
         print("🔐 Por favor, inicia sesión manualmente en el navegador.")
@@ -25,6 +25,6 @@ def main():
                 if not ruc:
                     ruc = RUC_PRUEBA
                 consultor.cargar_token()
-                print(consultor.score_crediticio(ruc))
+                print(consultor.validar_ruc_bloqueado(ruc))
 if __name__ == '__main__':
     main()
