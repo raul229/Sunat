@@ -35,5 +35,9 @@ def cargar_json(clave):
     if os.path.exists(TOKENS_FILE):
         with open(TOKENS_FILE, 'r') as f:
             data = json.load(f)
-            return data.get(clave)
+            valor=data.get(clave)
+            if not valor:
+                _guardar_en_tokenfile('',clave)
+                return ''
+            return valor
     return None 
