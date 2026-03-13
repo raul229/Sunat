@@ -39,15 +39,20 @@ class ConsultorOF:
             "data[ruc]": ruc,
         }
         response = self.consultar(payload)
-        body = response.json()
-        print(body)
-        data={}
+        try:
+            body = response.json()
+        except:
+            return {'error': 'token invalido'}               
+        data={
+            'estado': 'libre'
+        }
         if body.get('response') != "success":
             data['comentario']=body.get('comment')
+            data['estado'] = 'bloqueado'
             data['motivo']=body.get('data')[0]['MOTIVO']
             return data
         
-        return body.get('data')
+        return data
     
     
     def consultar(self, payload):
