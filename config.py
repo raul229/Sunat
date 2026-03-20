@@ -22,3 +22,8 @@ LINK_POWERAPPS = os.getenv('LINK_POWERAPPS')
 API_URL_ONFORCE = 'https://ventasnegocios.on.pe/controllers/cliente.php'
 FIXED_HEADERS_ONFORCE = {}
 LINK_ONFORCE = os.getenv('LINK_ONFORCE')
+
+##ENTEL - CONSULTAS SUELTAS
+
+API_URL_ENTEL = os.getenv('LINK_CONSULTA_SUELTA')
+LINK_ENTEL_LOGIN = os.getenv('LINK_ENTEL_LOGIN')
