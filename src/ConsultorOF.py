@@ -1,26 +1,26 @@
 import json
 import requests
-from utils.Utilidades import cargar_json
+from utils.Utilidades import cargar_json, json_valido
+from auth.AuthOnForce import obtener_token_onforce
 from config import API_URL_ONFORCE,RUC_PRUEBA
 
 class ConsultorOF:
     
     def __init__(self):
         self._token = None
-        #self.FIXED_HEADERS = FIXED_HEADERS_ONFORCE
+        self._token_valido=False
         self.RUC_PRUEBA=RUC_PRUEBA
         self.sesion = None
         self.cargar_token()
 
     def _crear_sesion(self):
         sesion = requests.Session()
-        #sesion.headers.update(self.FIXED_HEADERS)
         sesion.cookies.update(self._token)
         return sesion
 
     def verificar_token(self):
         response = self.consultar(self.RUC_PRUEBA)
-        if 'Bienvenido a ON NEGOCIOS' in response.text:
+        if response is None:
             return False
         return True
 
@@ -29,6 +29,7 @@ class ConsultorOF:
         if cookies is not None:
             self._token= cookies
             self.sesion=self._crear_sesion()
+            self._token_valido=True
             print('Token cargado!')
         else:
             print('Token no encontrado')
@@ -39,26 +40,29 @@ class ConsultorOF:
             "data[ruc]": ruc,
         }
         response = self.consultar(payload)
-        try:
-            body = response.json()
-        except:
-            return {'error': 'token invalido'}               
+    
         data={
             'estado': 'libre'
         }
-        if body.get('response') != "success":
-            data['comentario']=body.get('comment')
+        if response.get('response') != "success":
+            data['comentario']=response.get('comment')
             data['estado'] = 'bloqueado'
-            data['motivo']=body.get('data')[0]['MOTIVO']
+            data['motivo']=response.get('data')[0]['MOTIVO']
             return data
         
         return data
     
     
     def consultar(self, payload):
-        
+        if not self._token_valido:
+            obtener_token_onforce()
+            self.cargar_token()
+
         response =  self.sesion.post(API_URL_ONFORCE, data=payload)
-        return response
+        data= json_valido(response)
+        if data is None:
+            self._token_valido=False
+        return data
 
     def score_crediticio(self, ruc):
         payload = {
@@ -68,13 +72,13 @@ class ConsultorOF:
         }
 
         response = self.consultar(payload)
-        body = response.json()
+        
 
-        if body.get('response') != 'success':
-            print(body.get('comment'))
+        if response.get('response') != 'success':
+            print(response.get('comment'))
             return None
 
-        data_raw = body.get("data")
+        data_raw = response.get("data")
 
         if not data_raw:
             return None
