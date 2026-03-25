@@ -1,3 +1,6 @@
+from utils.Utilidades import obtener_valor
+from utils.Utilidades import json_valido
+import copy
 import requests
 from utils.Utilidades import cargar_json
 from auth.AuthEntel import obtener_token_entel
@@ -119,6 +122,7 @@ class ConsultorCS:
         self.RUC_PRUEBA = RUC_PRUEBA
         self.sesion = None
         self.cargar_token()
+        self.verificar_token()
 
     def _crear_sesion(self):
         sesion = requests.Session()
@@ -143,9 +147,16 @@ class ConsultorCS:
         else:
             print('Token Entel no encontrado')
 
-    def verificar_token(self):
+    def verificar_token(self)->bool:
         response = self.evaluar_ruc(self.RUC_PRUEBA)
-        return response is not None
+        if response is None:
+            self._token_valido=False
+            return False
+
+        if not response:
+            self._token_valido=False
+            return False
+        return True
 
     def consultar(self, payload):
         """Hace POST al endpoint de Entel con auto-refresh de token."""
@@ -154,31 +165,41 @@ class ConsultorCS:
             self.cargar_token()
 
         response = self.sesion.post(API_URL_ENTEL, json=payload)
-
-        if response.status_code != 200:
-            print(f"Error {response.status_code}: {response.text[:200]}")
-            self._token_valido = False
+        data = json_valido(response, 'application/json; charset=utf-8')
+        if data is None:
+            self._token_valido=False
             return None
+        return data
 
-        try:
-            return response.json()
-        except Exception:
-            print("Respuesta no es JSON válido")
-            self._token_valido = False
-            return None
-
-    def evaluar_ruc(self, ruc, token_param=""):
+    def evaluar_ruc(self, ruc)->dict:
         """Evalúa un RUC construyendo el payload completo.
         
         Args:
             ruc: Número de RUC a evaluar
             token_param: Token de la URL (el Base64 con info de usuario/tienda)
         """
-        import copy
         payload = copy.deepcopy(self.PAYLOAD_BASE)
         payload['screenData']['variables']['Ruc'] = str(ruc)
-        print(ruc)
-        if token_param:
-            payload['screenData']['variables']['Token'] = token_param
-
-        return self.consultar(payload)
+        response_json= self.consultar(payload)
+        evaluacion=obtener_valor(response_json,'data','ResponsePCOEvaluation')
+      
+        data={
+            'preevaluacion_crediticia': obtener_valor(evaluacion,'RejectedMessage'),
+            'estado_aprobacion':obtener_valor(evaluacion,'IsApproved'),
+            'planes_datos': {
+                'monto_maximo': obtener_valor(evaluacion,'AdditionalServices','MaximumAmountAvailableForContractingMobileServices'),
+                'monto_ocupado': obtener_valor(evaluacion,'AdditionalServices','AmountOccupiedOnMobileServices'),
+                'monto_disponible': obtener_valor(evaluacion,'AdditionalServices','AmountAvailableToContractMobileServices'),
+                
+                
+                },
+            'equipos_accesorios':{
+                'tipo_cliete':obtener_valor(evaluacion,'TypeOfCustomer'),
+                'meses_financiamiento':obtener_valor(evaluacion,'EquipmentAndAccesories','NumberOfMonthsForFinancingInstallments'),
+                'monto_maximo_financiamiento': obtener_valor(evaluacion,'EquipmentAndAccesories','AmountAvailableToFinanceEquipmentAndAccessories'),
+                'monto_ocupado_financiamiento': obtener_valor(evaluacion,'EquipmentAndAccesories','AmountOccupiedInLeasedEquipment'),
+                'monto_disponible_financiamiento': obtener_valor(evaluacion,'EquipmentAndAccesories','AmountAvailableToFinanceEquipmentAndAccessories'),
+                
+            }
+          }
+        return data
