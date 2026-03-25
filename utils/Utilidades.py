@@ -39,4 +39,9 @@ def cargar_json(clave):
                 _guardar_en_tokenfile('',clave)
                 return ''
             return valor
-    return None 
+    return None
+
+def obtener_valor(diccionario, *keys):
+    for key in keys:
+       diccionario=diccionario.get(key, {})
+    return diccionario
