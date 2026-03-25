@@ -1,15 +1,15 @@
+from src.ConsultorBASE import ConsultorBASE
 import json
 import requests
 from utils.Utilidades import cargar_json, json_valido
 from auth.AuthOnForce import obtener_token_onforce
-from config import API_URL_ONFORCE,RUC_PRUEBA
+from config import API_URL_ONFORCE
 
-class ConsultorOF:
+class ConsultorOF(ConsultorBASE):
     
     def __init__(self):
         self._token = None
         self._token_valido=False
-        self.RUC_PRUEBA=RUC_PRUEBA
         self.sesion = None
         self.cargar_token()
 
@@ -18,7 +18,7 @@ class ConsultorOF:
         sesion.cookies.update(self._token)
         return sesion
 
-    def verificar_token(self):
+    def verificar_token(self)->bool:
         response = self.consultar(self.RUC_PRUEBA)
         if response is None:
             return False

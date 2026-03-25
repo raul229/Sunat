@@ -1,13 +1,13 @@
 import requests
 from utils.Utilidades import cargar_json
-from config import API_URL_POWERAPPS, FIXED_HEADERS_POWERAPPS, RUC_PRUEBA
+from config import API_URL_POWERAPPS, FIXED_HEADERS_POWERAPPS
+from src.ConsultorBASE import ConsultorBASE
 
-class ConsultorPA:
+class ConsultorPA(ConsultorBASE):
     
     def __init__(self):
         self._token = None
         self.FIXED_HEADERS = FIXED_HEADERS_POWERAPPS
-        self.RUC_PRUEBA=RUC_PRUEBA
         self.sesion = None
         self.cargar_token()
 
@@ -17,7 +17,7 @@ class ConsultorPA:
         sesion.headers.update({"authorization": f"Bearer {self._token}"})
         return sesion
 
-    def verificar_token(self):
+    def verificar_token(self)->bool:
         response = self.consultar(self.RUC_PRUEBA)
         if not response.status_code == 200:
             return False
