@@ -1,13 +1,14 @@
+from src.ConsultorBASE import ConsultorBASE
 from utils.Utilidades import obtener_valor
 from utils.Utilidades import json_valido
 import copy
 import requests
 from utils.Utilidades import cargar_json
 from auth.AuthEntel import obtener_token_entel
-from config import API_URL_ENTEL, RUC_PRUEBA
+from config import API_URL_ENTEL
 
 
-class ConsultorCS:
+class ConsultorCS(ConsultorBASE):
 
     PAYLOAD_BASE = {
         "versionInfo": {
@@ -119,7 +120,6 @@ class ConsultorCS:
     def __init__(self):
         self._csrf_token = None
         self._token_valido = False
-        self.RUC_PRUEBA = RUC_PRUEBA
         self.sesion = None
         self.cargar_token()
         self.verificar_token()
@@ -163,6 +163,9 @@ class ConsultorCS:
         if not self._token_valido:
             obtener_token_entel()
             self.cargar_token()
+        
+        if not API_URL_ENTEL:
+            raise ValueError("API_URL_ENTEL no está definido en el .env")
 
         response = self.sesion.post(API_URL_ENTEL, json=payload)
         data = json_valido(response, 'application/json; charset=utf-8')
