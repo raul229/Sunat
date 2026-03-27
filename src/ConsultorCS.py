@@ -121,6 +121,7 @@ class ConsultorCS(ConsultorBASE):
         self._csrf_token = None
         self._token_valido = False
         self.sesion = None
+        self.login_remoto = False
         self.cargar_token()
         self.verificar_token()
 
@@ -139,7 +140,7 @@ class ConsultorCS(ConsultorBASE):
 
     def cargar_token(self):
         datos = cargar_json('entel')
-        if datos and isinstance(datos, dict) and datos.get('cookies'):
+        if datos and isinstance(datos, dict):
             self._csrf_token = datos
             self.sesion = self._crear_sesion()
             self._token_valido = True
@@ -149,11 +150,7 @@ class ConsultorCS(ConsultorBASE):
 
     def verificar_token(self)->bool:
         response = self.evaluar_ruc(self.RUC_PRUEBA)
-        if response is None:
-            self._token_valido=False
-            return False
-
-        if not response:
+        if response == {}:
             self._token_valido=False
             return False
         return True
@@ -161,7 +158,9 @@ class ConsultorCS(ConsultorBASE):
     def consultar(self, payload):
         """Hace POST al endpoint de Entel con auto-refresh de token."""
         if not self._token_valido:
-            obtener_token_entel()
+            if not self.login_remoto:
+                obtener_token_entel()
+                
             self.cargar_token()
         
         if not API_URL_ENTEL:
@@ -185,7 +184,8 @@ class ConsultorCS(ConsultorBASE):
         payload['screenData']['variables']['Ruc'] = str(ruc)
         response_json= self.consultar(payload)
         evaluacion=obtener_valor(response_json,'data','ResponsePCOEvaluation')
-      
+        if not evaluacion:
+            return {}   
         data={
             'preevaluacion_crediticia': obtener_valor(evaluacion,'RejectedMessage'),
             'estado_aprobacion':obtener_valor(evaluacion,'IsApproved'),

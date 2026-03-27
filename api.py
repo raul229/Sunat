@@ -11,12 +11,20 @@ app = FastAPI(
 )
 
 consultor = ConsultorCS()
+consultor.login_remoto = True
 
 # Endpoint con parámetros de ruta y de consulta (query)
 @app.post("/consulasuelta/")
 async def consulta_suelta(request: Request):
     data = await request.json()
     return consultor.evaluar_ruc(data['ruc'])
+
+@app.post("/token/")
+async def token(request: Request):
+    data = await request.json()
+    print(data)
+    return consultor.cargar_token(data)
+
 
 # Bloque para ejecutar el servidor de desarrollo al correr 'python api.py'
 if __name__ == "__main__":
