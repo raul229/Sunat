@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from src.ConsultorCS import ConsultorCS
+from utils.Utilidades import _asegurar_archivo_token,_guardar_en_tokenfile
 import uvicorn
 
 
@@ -22,8 +23,10 @@ async def consulta_suelta(request: Request):
 @app.post("/token/")
 async def token(request: Request):
     data = await request.json()
-    print(data)
-    return consultor.cargar_token(data)
+    _asegurar_archivo_token()
+    _guardar_en_tokenfile(data,'entel')
+    consultor.cargar_token()
+    return {"status":"ok"}
 
 
 # Bloque para ejecutar el servidor de desarrollo al correr 'python api.py'
