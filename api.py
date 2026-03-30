@@ -24,9 +24,10 @@ async def consulta_suelta(request: Request):
 async def token(request: Request):
     data = await request.json()
     _asegurar_archivo_token()
-    _guardar_en_tokenfile(data,'entel')
+    _guardar_en_tokenfile(data, 'entel')
     consultor.cargar_token()
     return {"status":"ok"}
+
 
 
 # Bloque para ejecutar el servidor de desarrollo al correr 'python api.py'
