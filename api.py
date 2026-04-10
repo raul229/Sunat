@@ -28,6 +28,11 @@ async def token(request: Request):
     consultor.cargar_token()
     return {"status":"ok"}
 
+@app.get("/update/")
+async def actulizar_token(request:Request):
+    consultor.cargar_token()
+    return {"estado":"ok"}
+
 
 
 # Bloque para ejecutar el servidor de desarrollo al correr 'python api.py'

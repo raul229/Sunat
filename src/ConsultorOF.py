@@ -19,10 +19,18 @@ class ConsultorOF(ConsultorBASE):
         return sesion
 
     def verificar_token(self)->bool:
-        response = self.consultar(self.RUC_PRUEBA)
-        if response is None:
+        if self.sesion is None:
             return False
-        return True
+
+        try:
+            response = self.sesion.post(API_URL_ONFORCE, data={
+                "accion": "validar_ruc_bloqueado",
+                "data[ruc]": self.RUC_PRUEBA,
+            })
+            data = json_valido(response)
+            return data is not None
+        except requests.RequestException:
+            return False
 
     def cargar_token(self):
         cookies = cargar_json('cookies')
@@ -40,6 +48,8 @@ class ConsultorOF(ConsultorBASE):
             "data[ruc]": ruc,
         }
         response = self.consultar(payload)
+        if not response:
+            return None
     
         data={
             'estado': 'libre'
@@ -58,6 +68,9 @@ class ConsultorOF(ConsultorBASE):
             obtener_token_onforce()
             self.cargar_token()
 
+        if self.sesion is None:
+            return None
+
         response =  self.sesion.post(API_URL_ONFORCE, data=payload)
         data= json_valido(response)
         if data is None:
@@ -72,6 +85,8 @@ class ConsultorOF(ConsultorBASE):
         }
 
         response = self.consultar(payload)
+        if not response:
+            return None
         
 
         if response.get('response') != 'success':
@@ -119,7 +134,9 @@ class ConsultorOF(ConsultorBASE):
             "data[num_ruc]": ruc,
         }
         response = self.consultar(payload)
-        data=response.json()
-        if data[0]['data']['data']:
+        if not response:
+            return False
+        data = response
+        if isinstance(data, list) and data and data[0].get('data', {}).get('data'):
             return True
         return False

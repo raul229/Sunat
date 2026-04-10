@@ -26,22 +26,32 @@ def _guardar_en_tokenfile(valor, nombre_atributo):
     print(f"Token guardado en {TOKENS_FILE}")
 
 def json_valido(response, tipo_repuesa='text/html; charset=UTF-8'):
-    if response.headers.get('Content-Type') == tipo_repuesa:
-        return response.json()
+    content_type = response.headers.get('Content-Type', '')
+    if content_type.startswith(tipo_repuesa):
+        try:
+            return response.json()
+        except ValueError:
+            return None
     return None
 
 def cargar_json(clave):
     if os.path.exists(TOKENS_FILE):
         with open(TOKENS_FILE, 'r') as f:
-            data = json.load(f)
-            valor=data.get(clave)
-            if not valor:
-                _guardar_en_tokenfile('',clave)
-                return ''
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                return None
+            valor = data.get(clave)
+            if valor in (None, ''):
+                return None
             return valor
     return None
 
 def obtener_valor(diccionario, *keys):
+    if not isinstance(diccionario, dict):
+        return None
     for key in keys:
-       diccionario=diccionario.get(key, {})
+        if not isinstance(diccionario, dict):
+            return None
+        diccionario = diccionario.get(key, {})
     return diccionario

@@ -11,8 +11,10 @@ def _interceptar_cookies(pagina, timeout=120)->dict:
     cookies_filtradas = {k: v for k, v in cookies.items() if k in ['cookiesession1', 'PHPSESSID']}
    
     start = time.time()
-    while cookies_filtradas is None and time.time() - start < timeout:
+    while not cookies_filtradas and time.time() - start < timeout:
         pagina.wait_for_timeout(1000)
+        cookies = {c['name']: c['value'] for c in pagina.context.cookies() }
+        cookies_filtradas = {k: v for k, v in cookies.items() if k in ['cookiesession1', 'PHPSESSID']}
     return cookies_filtradas
 
 def obtener_token_onforce()->dict:

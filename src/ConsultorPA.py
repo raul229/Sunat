@@ -18,10 +18,14 @@ class ConsultorPA(ConsultorBASE):
         return sesion
 
     def verificar_token(self)->bool:
-        response = self.consultar(self.RUC_PRUEBA)
-        if not response.status_code == 200:
+        if self.sesion is None:
             return False
-        return True
+
+        try:
+            response = self.sesion.post(API_URL_POWERAPPS, json={"text": self.RUC_PRUEBA})
+            return response.status_code == 200
+        except requests.RequestException:
+            return False
 
     def cargar_token(self):
         token = cargar_json('jwt')
@@ -34,5 +38,9 @@ class ConsultorPA(ConsultorBASE):
     
     def consultar(self, ruc):
         payload = {"text": ruc}
+        if self.sesion is None:
+            self.cargar_token()
+        if self.sesion is None:
+            return None
         response =  self.sesion.post(API_URL_POWERAPPS, json=payload)
         return response
