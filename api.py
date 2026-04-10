@@ -11,8 +11,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-consultor = ConsultorCS()
-consultor.login_remoto = True
+consultor = ConsultorCS(login_remoto=True)
 
 # Endpoint con parámetros de ruta y de consulta (query)
 @app.post("/consulasuelta/")

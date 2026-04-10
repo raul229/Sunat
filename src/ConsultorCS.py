@@ -117,13 +117,15 @@ class ConsultorCS(ConsultorBASE):
         }
     }
 
-    def __init__(self):
+    def __init__(self, login_remoto=False, auto_verificar=True):
         self._csrf_token = None
         self._token_valido = False
         self.sesion = None
-        self.login_remoto = False
+        self.login_remoto = login_remoto
+        self._auto_verificar = auto_verificar
         self.cargar_token()
-        self.verificar_token()
+        if self._auto_verificar and not self.login_remoto:
+            self.verificar_token()
 
     def _crear_sesion(self):
         sesion = requests.Session()
@@ -149,6 +151,8 @@ class ConsultorCS(ConsultorBASE):
             print('Token Entel no encontrado')
 
     def verificar_token(self)->bool:
+        if self.login_remoto:
+            return self._token_valido
         response = self.evaluar_ruc(self.RUC_PRUEBA)
         if response == {}:
             self._token_valido=False
